@@ -6,6 +6,10 @@
 
 - `s2-geometry` is no longer a dependency of `@deck.gl/geo-layers`.
 
+##### Tile3DLayer
+
+`_ionAccessId` and `_ionAccesToken` are removed. To render an ion dataset with `Tile3DLayer`, pass the ion dataset url to prop `data`, and `loadOptions.headers` with Cesium authentication token.
+
 ## Upgrading from deck.gl v7.x to v8.0
 
 ### Breaking Changes

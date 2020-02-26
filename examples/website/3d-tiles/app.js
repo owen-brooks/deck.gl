@@ -7,10 +7,15 @@ import {Tile3DLayer} from '@deck.gl/geo-layers';
 import {registerLoaders} from '@loaders.gl/core';
 // To manage dependencies and bundle size, the app must decide which supporting loaders to bring in
 import {DracoWorkerLoader} from '@loaders.gl/draco';
+import {Tiles3DLoader, _getIonTilesetMetadata as getIonTilesetMetadata} from '@loaders.gl/3d-tiles';
 
 registerLoaders([DracoWorkerLoader]);
 // Set your mapbox token here
 const MAPBOX_TOKEN = process.env.MapboxAccessToken; // eslint-disable-line
+
+const CESIUM_ION_URL = 'https://api.cesium.com/v1/assets';
+const ION_ASSET_ID = 43978;
+const ION_DATA_URL = `${CESIUM_ION_URL}/${ION_ASSET_ID}`;
 const ION_TOKEN =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWMxMzcyYy0zZjJkLTQwODctODNlNi01MDRkZmMzMjIxOWIiLCJpZCI6OTYyMCwic2NvcGVzIjpbImFzbCIsImFzciIsImdjIl0sImlhdCI6MTU2Mjg2NjI3M30.1FNiClUyk00YH_nWfSGpiQAjR5V2OvREDq1PJ5QMjWQ';
 
@@ -37,13 +42,23 @@ export default class App extends PureComponent {
     this._onTilesetLoad = this._onTilesetLoad.bind(this);
   }
 
+  componentDidMount() {
+    this._loadIonData();
+  }
+
+  async _loadIonData() {
+    const metadata = await getIonTilesetMetadata(ION_ASSET_ID, ION_TOKEN);
+    this.setState({
+      metadata
+    });
+    if (this.props.updateAttributions) {
+      this.props.updateAttributions(metadata.attributions);
+    }
+  }
+
   // Called by Tile3DLayer when a new tileset is loaded
   _onTilesetLoad(tileset) {
-    this.setState({attributions: tileset.credits.attributions});
     this._centerViewOnTileset(tileset);
-    if (this.props.updateAttributions) {
-      this.props.updateAttributions(tileset.credits.attributions);
-    }
   }
 
   // Recenter view to cover the new tileset, with a fly-to transition
@@ -66,9 +81,12 @@ export default class App extends PureComponent {
   _renderTile3DLayer() {
     return new Tile3DLayer({
       id: 'tile-3d-layer',
-      _ionAssetId: 43978,
-      _ionAccessToken: ION_TOKEN,
       pointSize: 2,
+      data: ION_DATA_URL,
+      loader: Tiles3DLoader,
+      loadOptions: {
+        headers: {Authentication: `Bearer ${ION_TOKEN}`}
+      },
       onTilesetLoad: this._onTilesetLoad
     });
   }
